@@ -1,4 +1,6 @@
+require("dotenv").config({ path: '../.env' });
 const express = require("express");
+const axios = require("axios");
 const cors = require("cors");
 const { exec } = require("child_process");
 const app = express();
@@ -6,6 +8,8 @@ const port = 3000;
 const supabaseClient = require("../database/supabaseClient");
 
 // Initialize Supabase Client
+
+app.use(express.json());
 
 // Configure CORS middleware to allow all origins (customize as needed)
 app.use(
@@ -16,6 +20,29 @@ app.use(
   })
 );
 
+const VIRUSTOTAL_KEY = process.env.VIRUSTOTAL_KEY;
+
+// STEP 1
+app.post("/scan", async (req, res) => {
+  const { hash } = req.body;
+  if (!hash) {
+    return res.status(400).send("No hash provided");
+  }
+
+  try {
+    const url = `https://www.virustotal.com/api/v3/files/${hash}`;
+    const response = await axios.get(url, {
+      headers: { "x-apikey": VIRUSTOTAL_KEY },
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    axios.get("http://localhost:3000/run-script");
+  }
+});
+
+
+// STEP 2
 app.get("/run-script", (req, res) => {
   console.log("DEBUG: Received request to run script.");
 
