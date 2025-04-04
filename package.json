@@ -2,5 +2,25 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.49.4",
     "dotenv": "^16.4.7"
+  "name": "ai-nako-spamurai",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hack-it-The-New-Era-of-Banking/AI-Nako-SpamurAI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hack-it-The-New-Era-of-Banking/AI-Nako-SpamurAI/issues"
+  },
+  "homepage": "https://github.com/hack-it-The-New-Era-of-Banking/AI-Nako-SpamurAI#readme",
+  "dependencies": {
+    "express": "^5.1.0"
   }
 }
