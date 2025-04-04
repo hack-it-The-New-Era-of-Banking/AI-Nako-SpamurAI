@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/hack-it-The-New-Era-of-Banking/AI-Nako-SpamurAI/issues"
   },
-  "homepage": "https://github.com/hack-it-The-New-Era-of-Banking/AI-Nako-SpamurAI#readme"
+  "homepage": "https://github.com/hack-it-The-New-Era-of-Banking/AI-Nako-SpamurAI#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
 }
