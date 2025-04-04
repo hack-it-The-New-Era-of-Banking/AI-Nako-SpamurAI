@@ -1,4 +1,7 @@
 {
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "dotenv": "^16.4.7"
   "name": "ai-nako-spamurai",
   "version": "1.0.0",
   "description": "",
