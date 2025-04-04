@@ -1,0 +1,5 @@
+{
+  "confidenceLevel": 95,
+  "explanation": "Multiple PDF files contain references to a suspicious URL `burp-collaborator-url` within actions, form submissions, and embedded files. This strongly suggests an attempt to exfiltrate data or trigger callbacks to an external server, which is indicative of malicious behavior. Several rules were tripped that look for specific PDF attack vectors like embedded Javascript, unusual launch actions, and extraction targets.",
+  "decision": "Malicious"
+}

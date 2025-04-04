@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-import { readFile } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from 'fs';
 
@@ -7,7 +7,7 @@ import fs from 'fs';
 config({ path: "../.env" });
 const geminiAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-async function assessLogYara(yaraRuleFile, logFile) {
+async function assessLogYara(yaraRuleFile, logFile, outputPath) {
   try {
     // Read Yara and Log files
     const yaraRules = await readFile(yaraRuleFile, "utf-8");
@@ -38,14 +38,28 @@ async function assessLogYara(yaraRuleFile, logFile) {
     const response = await result.response;
     const text = response.text();
 
-    return text;
+    // extract da words
+    const match = text.match(/Confidence Level:\s*(\d+)%?\s*Brief Explanation:\s*(.*?)\s*Decision:\s*(Safe|Suspicious|Malicious)/is);
+
+    // format it
+    const jsonOutput = match
+    ? {
+        confidenceLevel: parseInt(match[1]),
+        explanation: match[2].trim(),
+        decision: match[3],
+      }
+    : { raw: text };
+
+    // jsontheweenie
+    await writeFile(outputPath, JSON.stringify(jsonOutput, null, 2), "utf-8");
+    console.log("Analysis complete. Output saved to:", outputPath);
+    //return text;
   } catch (error) {
     console.error("Error: ", error);
   }
 }
 
 const folderPath = "./logs";
-
 fs.readdir(folderPath, (err, logs) => {
   if (err) {
     console.error("Error: ", err);
@@ -56,6 +70,6 @@ fs.readdir(folderPath, (err, logs) => {
 
   // test
   const yaraRules = "Maldoc_PDF.yar";
-  assessLogYara(yaraRules, "logs/" + latestLog).then(console.log);
+  assessLogYara(yaraRules, "logs/" + latestLog, "test.json").then(console.log);
 });
 
