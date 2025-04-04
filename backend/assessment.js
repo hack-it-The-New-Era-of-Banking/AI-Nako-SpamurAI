@@ -53,11 +53,9 @@ fs.readdir(folderPath, (err, logs) => {
   }
   const sortedLogs = logs.sort();
   const latestLog = sortedLogs[sortedLogs.length - 1];
-  console.log("Latest File: ", latestLog);
-  console.log("test");
 
   // test
   const yaraRules = "Maldoc_PDF.yar";
-  assessLogYara(yaraRules, latestLog).then(console.log);
+  assessLogYara(yaraRules, "logs/" + latestLog).then(console.log);
 });
 
