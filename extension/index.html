@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SHA-256 File Hash Generator</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <h2>Compute SHA-256 Hash of a File</h2>
-    <input type="file" id="fileInput">
+    <input type="file" id="fileInput" accept=".eml,.txt,.msg" />
     <button id="computeHashButton">Compute Hash</button>
     <p id="hashResult"></p>
+
+    <button id="uploadEmlButton">Upload .eml and Extract</button>
+    <pre id="emlResult">No .eml uploaded yet.</pre>
 
     <h3>VirusTotal Scan Result</h3>
     <pre id="vtResult">No scan yet.</pre>
 
     <script src="script.js"></script>
-</body>
-
+  </body>
 </html>

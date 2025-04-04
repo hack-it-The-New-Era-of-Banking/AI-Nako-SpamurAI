@@ -1,15 +1,19 @@
-require("dotenv").config({ path: '../.env' });
+const path = require("path");
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
 const { exec } = require("child_process");
 const app = express();
 const port = 3000;
-const supabaseClient = require("../database/supabaseClient");
+const multer = require("multer");
+const fs = require("fs");
+const { simpleParser } = require("mailparser");
 
 // Initialize Supabase Client
 
 app.use(express.json());
+
+const upload = multer({ dest: "docs/" });
 
 // Configure CORS middleware to allow all origins (customize as needed)
 app.use(
@@ -19,6 +23,13 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Load environment variables from .env file
+require("dotenv").config({ path: "../.env" });
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const { createClient } = require("@supabase/supabase-js");
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const VIRUSTOTAL_KEY = process.env.VIRUSTOTAL_KEY;
 
@@ -41,6 +52,45 @@ app.post("/scan", async (req, res) => {
   }
 });
 
+app.post("/upload-eml", upload.single("eml"), async (req, res) => {
+  if (!req.file) return res.status(400).send("No file uploaded.");
+
+  const emlPath = req.file.path;
+  const outputDir = path.resolve(__dirname, "docs");
+
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+  try {
+    const emlContent = fs.readFileSync(emlPath);
+    const parsed = await simpleParser(emlContent);
+
+    const pdfAttachments = parsed.attachments.filter(
+      (a) => a.contentType === "application/pdf"
+    );
+
+    if (pdfAttachments.length === 0) {
+      return res
+        .status(404)
+        .send("❌ No PDF attachments found in the .eml file.");
+    }
+
+    const savedPaths = [];
+
+    pdfAttachments.forEach((pdf, index) => {
+      const filename = pdf.filename || `attachment-${index}.pdf`;
+      const savePath = path.join(outputDir, filename);
+      fs.writeFileSync(savePath, pdf.content);
+      savedPaths.push(filename);
+    });
+
+    res.send(`✅ Saved PDF attachment(s): ${savedPaths.join(", ")}`);
+  } catch (err) {
+    console.error("❌ Error parsing .eml:", err);
+    res.status(500).send("❌ Failed to extract PDF from .eml file.");
+  } finally {
+    fs.unlinkSync(emlPath); // delete temp upload
+  }
+});
 
 // STEP 2
 app.get("/run-script", (req, res) => {
