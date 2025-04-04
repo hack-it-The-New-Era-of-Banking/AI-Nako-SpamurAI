@@ -48,17 +48,17 @@ app.post("/scan", async (req, res) => {
 
     res.json(response.data);
   } catch (error) {
-    axios.get("http://localhost:3000/run-script");
+    axios.get("http://localhost:3000/run-script"); //here
   }
 });
 
-app.post("/upload-eml", upload.single("eml"), async (req, res) => {
+app.post("/upload-eml", upload.single("eml"), async (req, res) => { //here
   if (!req.file) return res.status(400).send("No file uploaded.");
 
   const emlPath = req.file.path;
   const outputDir = path.resolve(__dirname, "docs");
 
-  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+  if (!fs.existsSync(outputDir)) fs.umkdirSync(outputDir, { recursive: true });
 
   try {
     const emlContent = fs.readFileSync(emlPath);

@@ -1,23 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SHA-256 File Hash Generator</title>
-  </head>
 
-  <body>
-    <h2>Compute SHA-256 Hash of a File</h2>
-    <input type="file" id="fileInput" accept=".eml,.txt,.msg" />
-    <button id="computeHashButton">Compute Hash</button>
-    <p id="hashResult"></p>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPAMURAI - File Hash Scanner</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
 
-    <button id="uploadEmlButton">Upload .eml and Extract</button>
-    <pre id="emlResult">No .eml uploaded yet.</pre>
+<body>
+    <div class="container">
+        <!-- Icon Placeholder -->
+        <div class="icon">
+            <img src="assets/logo.png" alt="SPAMURAI Logo">
+        </div>
 
-    <h3>VirusTotal Scan Result</h3>
-    <pre id="vtResult">No scan yet.</pre>
+        <h2>SPAMURAI</h2>
+
+        <div class="file-upload">
+            <input type="file" id="fileInput">
+            <button id="computeHashButton">Compute Hash</button>
+        </div>
+
+        <div class="result-box">
+            <p id="hashResult">SHA-256 Hash will be displayed here.</p>
+        </div>
+
+        <h3>VirusTotal Scan Result</h3>
+        <div class="result-box">
+            <pre id="vtResult">No scan yet.</pre>
+        </div>
+    </div>
 
     <script src="script.js"></script>
-  </body>
+</body>
+
 </html>
