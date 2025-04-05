@@ -18,8 +18,8 @@
         <h2>SPAMURAI</h2>
 
         <div class="file-upload">
-            <input type="file" id="fileInput">
-            <button id="computeHashButton">Compute Hash</button>
+            <input type="file" id="fileInput" accept=".eml">
+            <button id="checkButton">Compute Hash</button>
         </div>
 
         <div class="result-box">
@@ -29,9 +29,11 @@
         <h3>VirusTotal Scan Result</h3>
         <div class="result-box">
             <pre id="vtResult" class="warning">No scan yet.</pre>
+        </div>
 
-    <h3>Local Forensic Result</h3>
-    <pre id="localResult">Not triggered.</pre>
+        <h3>Local Forensic Result</h3>
+        <div class="result-box">
+            <pre id="localResult">Not triggered.</pre>
         </div>
     </div>
 
