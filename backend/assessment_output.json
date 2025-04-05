@@ -1,5 +1,5 @@
 {
-  "confidenceLevel": 1,
-  "explanation": "The log file contains system checks, rootkit checks, network checks, and running processes. It does not contain any PDF file content, so none of the YARA rules match.",
+  "confidenceLevel": 0,
+  "explanation": "The log file contains system check results and process information, none of which directly match the YARA rules designed for analyzing PDF files. The YARA rules are specifically crafted to detect malicious patterns within the structure and content of PDF documents.",
   "decision": "Safe"
 }
