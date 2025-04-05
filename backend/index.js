@@ -1,58 +1,111 @@
-const path = require("path");
-const express = require("express");
-const axios = require("axios");
-const cors = require("cors");
-const { exec } = require("child_process");
+import path from "path";
+import express from "express";
+import axios from "axios";
+import cors from "cors";
+import { exec } from "child_process";
+import multer from "multer";
+import fs from "fs";
+import { simpleParser } from "mailparser";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { assessLogYara } from "./assessment.js";
+import { createClient } from "@supabase/supabase-js";
+
+// Simulate __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
+dotenv.config({ path: "../.env" });
+
+// Init Express
 const app = express();
 const port = 3000;
-const multer = require("multer");
-const fs = require("fs");
-const { simpleParser } = require("mailparser");
-
-// Initialize Supabase Client
-
-app.use(express.json());
-
 const upload = multer({ dest: "docs/" });
 
-// Configure CORS middleware to allow all origins (customize as needed)
+// Supabase
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const VIRUSTOTAL_KEY = process.env.VIRUSTOTAL_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Middleware
+app.use(express.json());
 app.use(
   cors({
-    origin: "*", // Allow all origins. You can restrict to specific domains if needed.
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// Load environment variables from .env file
-require("dotenv").config({ path: "../.env" });
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const { createClient } = require("@supabase/supabase-js");
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// --- Routes ---
 
-const VIRUSTOTAL_KEY = process.env.VIRUSTOTAL_KEY;
-
-// STEP 1
+// VirusTotal Hash Scan
 app.post("/scan", async (req, res) => {
   const { hash } = req.body;
-  if (!hash) {
-    return res.status(400).send("No hash provided");
-  }
+  if (!hash) return res.status(400).send("No hash provided");
 
   try {
-    const url = `https://www.virustotal.com/api/v3/files/${hash}`;
-    const response = await axios.get(url, {
-      headers: { "x-apikey": VIRUSTOTAL_KEY },
-    });
-
-    res.json(response.data);
+    const response = await axios.get(
+      `https://www.virustotal.com/api/v3/files/${hash}`,
+      { headers: { "x-apikey": VIRUSTOTAL_KEY } }
+    );
+    return res.json(response.data);
   } catch (error) {
-    axios.get("http://localhost:3000/run-script"); //here
+    console.warn("❌ VirusTotal failed. Running local Docker scan...");
+    try {
+      const localScanResponse = await axios.get(
+        "http://localhost:3000/run-script"
+      );
+      return res.json({
+        message: "Fallback to local Docker forensic scan.",
+        local: localScanResponse.data,
+      });
+    } catch (fallbackError) {
+      return res.status(500).json({
+        error: "Both VirusTotal and local scan failed.",
+        details: fallbackError.message,
+      });
+    }
   }
 });
 
-app.post("/upload-eml", upload.single("eml"), async (req, res) => { //here
+// Gemini AI Assessment
+app.get("/assess", async (req, res) => {
+  try {
+    const folderPath = path.resolve("logs");
+    const yaraRulePath = path.resolve("./Maldoc_PDF.yar");
+    const outputPath = path.resolve("assessment_output.json");
+
+    const logs = fs
+      .readdirSync(folderPath)
+      .filter((file) => file.endsWith(".log"))
+      .sort();
+
+    if (!logs.length)
+      return res.status(404).json({ error: "No log files found." });
+
+    const latestLog = path.join(folderPath, logs[logs.length - 1]);
+    const result = await assessLogYara(yaraRulePath, latestLog, outputPath);
+
+    res.json({
+      message: "✅ Gemini assessment completed.",
+      latestLog: path.basename(latestLog),
+      result,
+    });
+  } catch (err) {
+    console.error("❌ Gemini assessment error:", err);
+    res.status(500).json({
+      error: "Gemini assessment failed.",
+      details: err.message,
+    });
+  }
+});
+
+// Upload .eml + extract PDFs
+app.post("/upload-eml", upload.single("eml"), async (req, res) => {
   if (!req.file) return res.status(400).send("No file uploaded.");
 
   const emlPath = req.file.path;
@@ -88,34 +141,52 @@ app.post("/upload-eml", upload.single("eml"), async (req, res) => { //here
     console.error("❌ Error parsing .eml:", err);
     res.status(500).send("❌ Failed to extract PDF from .eml file.");
   } finally {
-    fs.unlinkSync(emlPath); // delete temp upload
+    fs.unlinkSync(emlPath);
   }
 });
 
-// STEP 2
+// Docker-based local forensic simulation
 app.get("/run-script", (req, res) => {
-  console.log("DEBUG: Received request to run script.");
+  console.log("🟢 Running Docker forensic simulation...");
 
-  // Adjust the path and script name as needed
-  exec("sh ./fetch_forensic_log.sh", (error, stdout, stderr) => {
-    console.log("DEBUG: Script execution completed.");
+  const dockerCommand = `docker run --rm \
+    -v ${path.resolve(__dirname, "docs")}:/docs \
+    -vtes ${path.resolve(__dirname, "logs")}:/logs \
+    forensic-sim`;
+
+  exec(dockerCommand, (error, stdout, stderr) => {
+    console.log("📦 Docker completed.");
+
     if (error) {
-      console.error("DEBUG: Error executing script:", error);
-      console.error("DEBUG: Stderr output:", stderr);
-      return res.status(500).send(`Script error: ${stderr}`);
+      console.error("❌ Docker error:", error);
+      return res.status(500).json({
+        message: "Docker container run failed.",
+        error: stderr || error.message,
+      });
     }
-    console.log("DEBUG: Script stdout output:", stdout);
-    res.send(`Script output: ${stdout}`);
+
+    const logPath = path.join(__dirname, "logs", "forensic.log");
+    if (!fs.existsSync(logPath)) {
+      return res.status(404).json({ message: "❌ Log file not found." });
+    }
+
+    const logContent = fs.readFileSync(logPath, "utf-8");
+
+    res.json({
+      message: "✅ Forensic analysis complete.",
+      dockerOutput: stdout,
+      log: logContent,
+    });
   });
 });
 
-// Request to fetch forensic PDFs
+// Dev test
 app.get("/fetch-forensic-pdfs", (req, res) => {
-  console.log("DEBUG: Received request to fetch forensic PDFs.");
-  // Add your logic to fetch forensic PDFs here
+  console.log("📥 Received request to fetch forensic PDFs.");
   res.send("Fetching forensic PDFs...");
 });
 
+// Start server
 app.listen(port, () => {
-  console.log(`DEBUG: Server is listening on port ${port}`);
+  console.log(`🚀 Server is running at http://localhost:${port}`);
 });

@@ -1,0 +1,5 @@
+{
+  "confidenceLevel": 1,
+  "explanation": "The log file contains system checks, rootkit checks, network checks, and running processes. It does not contain any PDF file content, so none of the YARA rules match.",
+  "decision": "Safe"
+}
