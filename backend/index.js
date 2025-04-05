@@ -46,9 +46,25 @@ app.post("/scan", async (req, res) => {
       headers: { "x-apikey": VIRUSTOTAL_KEY },
     });
 
-    res.json(response.data);
+    return res.json(response.data); // ✅ Return VT result
   } catch (error) {
-    axios.get("http://localhost:3000/run-script");
+    console.warn("❌ VirusTotal lookup failed, triggering local scan...");
+
+    // Trigger your Docker container locally
+    try {
+      const localScanResponse = await axios.get(
+        "http://localhost:3000/run-script"
+      );
+      return res.json({
+        message: "Fallback to local Docker forensic scan.",
+        local: localScanResponse.data,
+      });
+    } catch (fallbackError) {
+      return res.status(500).json({
+        error: "Both VirusTotal and local scan failed.",
+        details: fallbackError.message,
+      });
+    }
   }
 });
 
@@ -92,20 +108,42 @@ app.post("/upload-eml", upload.single("eml"), async (req, res) => {
   }
 });
 
-// STEP 2
 app.get("/run-script", (req, res) => {
-  console.log("DEBUG: Received request to run script.");
+  console.log("🟢 Received request to run Docker forensic simulation.");
 
-  // Adjust the path and script name as needed
-  exec("sh ./fetch_forensic_log.sh", (error, stdout, stderr) => {
-    console.log("DEBUG: Script execution completed.");
+  // Docker command to run forensic analysis container
+  const dockerCommand = `docker run --rm \
+    -v ${path.resolve(__dirname, "docs")}:/docs \
+    -v ${path.resolve(__dirname, "logs")}:/logs \
+    forensic-sim`;
+
+  exec(dockerCommand, (error, stdout, stderr) => {
+    console.log("📦 Docker run completed.");
+
     if (error) {
-      console.error("DEBUG: Error executing script:", error);
-      console.error("DEBUG: Stderr output:", stderr);
-      return res.status(500).send(`Script error: ${stderr}`);
+      console.error("❌ Docker execution failed:", error);
+      console.error("stderr:", stderr);
+      return res.status(500).json({
+        message: "Docker container run failed.",
+        error: stderr || error.message,
+      });
     }
-    console.log("DEBUG: Script stdout output:", stdout);
-    res.send(`Script output: ${stdout}`);
+
+    const logPath = path.join(__dirname, "logs", "forensic.log");
+
+    if (!fs.existsSync(logPath)) {
+      return res.status(404).json({
+        message: "❌ Log file not found after Docker execution.",
+      });
+    }
+
+    const logContent = fs.readFileSync(logPath, "utf-8");
+
+    res.json({
+      message: "✅ Forensic analysis complete.",
+      dockerOutput: stdout,
+      log: logContent,
+    });
   });
 });
 
