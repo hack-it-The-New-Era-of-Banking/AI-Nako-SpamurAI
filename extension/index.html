@@ -3,20 +3,89 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SHA-256 File Hash Generator</title>
+    <title>EML Virus Scanner</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        color: #333;
+        border-radius: 10px;
+        box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+      }
+
+      h2 {
+        color: #007acc;
+        margin-bottom: 10px;
+      }
+
+      input[type="file"] {
+        display: block;
+        margin: 10px 0 20px;
+      }
+
+      button {
+        background-color: #007acc;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #005fa3;
+      }
+
+      h3 {
+        margin-top: 30px;
+        color: #444;
+      }
+
+      pre {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 12px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: monospace;
+      }
+
+      #vtResult.success {
+        border-left: 6px solid #4caf50;
+        background-color: #e8f5e9;
+      }
+
+      #vtResult.warning {
+        border-left: 6px solid #ff9800;
+        background-color: #fff3e0;
+      }
+
+      #vtResult.error {
+        border-left: 6px solid #f44336;
+        background-color: #ffebee;
+      }
+    </style>
   </head>
 
   <body>
-    <h2>Compute SHA-256 Hash of a File</h2>
-    <input type="file" id="fileInput" accept=".eml,.txt,.msg" />
-    <button id="computeHashButton">Compute Hash</button>
-    <p id="hashResult"></p>
+    <h2>Check .eml File if Malicious</h2>
+    <input type="file" id="fileInput" accept=".eml" />
+    <button id="checkButton">Check</button>
 
-    <button id="uploadEmlButton">Upload .eml and Extract</button>
-    <pre id="emlResult">No .eml uploaded yet.</pre>
+    <h3>Hash</h3>
+    <p id="hashResult">No hash computed yet.</p>
 
     <h3>VirusTotal Scan Result</h3>
-    <pre id="vtResult">No scan yet.</pre>
+    <pre id="vtResult" class="warning">No scan yet.</pre>
+
+    <h3>Local Forensic Result</h3>
+    <pre id="localResult">Not triggered.</pre>
 
     <script src="script.js"></script>
   </body>
